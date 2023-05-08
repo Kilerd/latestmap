@@ -2,6 +2,10 @@
 name = "latestmap"
 version = "0.1.0"
 edition = "2021"
+authors = ["Kilerd <blove694@gmail.com>"]
+license = "MIT"
+repository = "https://github.com/Kilerd/latestmap"
+description = "latest map"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
