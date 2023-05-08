@@ -2,7 +2,7 @@ use std::collections::{BTreeSet, HashMap};
 use std::hash::Hash;
 
 #[derive(Clone, Debug)]
-pub(crate) struct LatestMap<Key: Eq + Hash + Clone + Ord, Value> {
+pub struct LatestMap<Key: Eq + Hash + Clone + Ord, Value> {
     pub(crate) data: HashMap<Key, Value>,
     date_index: BTreeSet<Key>,
 }
@@ -22,16 +22,21 @@ impl<Key: Eq + Hash + Clone + Ord, Value> LatestMap<Key, Value> {
         self.date_index.insert(key);
     }
     pub fn get_latest(&self, key: &Key) -> Option<&Value> {
-        let sorted_keys: Vec<&Key> = self.date_index.iter().collect();
-        let target_key = match sorted_keys.binary_search(&key) {
-            Ok(_) => key,
-            Err(gt_index) => {
-                if gt_index == 0 {
-                    return None;
+        let target_key = if self.date_index.contains(key) {
+            key
+        } else {
+            let sorted_keys: Vec<&Key> = self.date_index.iter().collect();
+            match sorted_keys.binary_search(&key) {
+                Ok(_) => key,
+                Err(gt_index) => {
+                    if gt_index == 0 {
+                        return None;
+                    }
+                    sorted_keys[gt_index - 1]
                 }
-                sorted_keys[gt_index - 1]
             }
         };
+
         self.data.get(target_key)
     }
     pub fn get_last_with_key(&self) -> Option<(&Key, &Value)> {
@@ -60,6 +65,7 @@ mod test {
         assert!(map.date_index.contains(&1));
         assert_eq!(map.data.get(&1), Some(&2));
     }
+
     #[test]
     fn should_contains_key() {
         let mut map: LatestMap<i32, i32> = LatestMap::default();
@@ -93,6 +99,7 @@ mod test {
         assert_eq!(map.get_latest(&24), Some(&40));
         assert_eq!(map.get_latest(&1000), Some(&100));
     }
+
     #[test]
     fn should_work_given_map_is_empty() {
         let map: LatestMap<i32, i32> = LatestMap::default();
