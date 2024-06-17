@@ -53,7 +53,7 @@ impl<Key: Eq + Hash + Clone + Ord, Value> LatestMap<Key, Value> {
         self.data_index.contains(key)
     }
 
-    pub fn pop_latest(&mut self, key: &Key) -> Option<Value> {
+    pub fn pop_latest(&mut self, key: &Key) -> Option<(Key, Value)> {
         let target_key = if self.data_index.contains(key) {
             key.clone()
         } else {
@@ -69,7 +69,7 @@ impl<Key: Eq + Hash + Clone + Ord, Value> LatestMap<Key, Value> {
             }
         };
         self.data_index.remove(&target_key);
-        self.data.remove(&target_key)
+        self.data.remove(&target_key).map(|value|(target_key, value))
     }
 }
 
@@ -139,7 +139,7 @@ mod test {
         assert_eq!(map.data.len(), 4);
         assert_eq!(map.get_latest(&1), Some(&2));
         assert_eq!(map.data.len(), 4);
-        assert_eq!(map.pop_latest(&3), Some(2));
+        assert_eq!(map.pop_latest(&3), Some((1,2)));
         assert_eq!(map.data.len(), 3);
         assert_eq!(map.data_index.len(), 3);
     }
