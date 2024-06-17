@@ -21,7 +21,7 @@ impl<Key: Eq + Hash + Clone + Ord, Value> LatestMap<Key, Value> {
         self.data.insert(key.clone(), value);
         self.data_index.insert(key);
     }
-    pub fn get_latest(&self, key: &Key) -> Option<&Value> {
+    pub fn get_latest<'a>(&'a self, key: &'a Key) -> Option<(&'a Key, &'a Value)> {
         let target_key = if self.data_index.contains(key) {
             key
         } else {
@@ -37,13 +37,13 @@ impl<Key: Eq + Hash + Clone + Ord, Value> LatestMap<Key, Value> {
             }
         };
 
-        self.data.get(target_key)
+        self.data.get(target_key).map(|value| (target_key, value))
     }
     pub fn get_last_with_key(&self) -> Option<(&Key, &Value)> {
         let sorted_keys: Vec<&Key> = self.data_index.iter().collect();
         sorted_keys
             .last()
-            .and_then(|&key| self.data.get(key).map(|v| (key, v)))
+            .and_then(|&key| self.data.get(key).map(move |v| (key, v)))
     }
 
     pub fn get_mut(&mut self, key: &Key) -> Option<&mut Value> {
@@ -69,7 +69,7 @@ impl<Key: Eq + Hash + Clone + Ord, Value> LatestMap<Key, Value> {
             }
         };
         self.data_index.remove(&target_key);
-        self.data.remove(&target_key).map(|value|(target_key, value))
+        self.data.remove(&target_key).map(|value| (target_key, value))
     }
 }
 
@@ -112,11 +112,11 @@ mod test {
         map.insert(50, 100);
 
         assert_eq!(map.get_latest(&0), None);
-        assert_eq!(map.get_latest(&1), Some(&2));
-        assert_eq!(map.get_latest(&3), Some(&2));
-        assert_eq!(map.get_latest(&20), Some(&40));
-        assert_eq!(map.get_latest(&24), Some(&40));
-        assert_eq!(map.get_latest(&1000), Some(&100));
+        assert_eq!(map.get_latest(&1), Some((&1, &2)));
+        assert_eq!(map.get_latest(&3), Some((&1, &2)));
+        assert_eq!(map.get_latest(&20), Some((&20, &40)));
+        assert_eq!(map.get_latest(&24), Some((&20, &40)));
+        assert_eq!(map.get_latest(&1000), Some((&50, &100)));
     }
 
     #[test]
@@ -137,9 +137,9 @@ mod test {
 
         assert_eq!(map.get_latest(&0), None);
         assert_eq!(map.data.len(), 4);
-        assert_eq!(map.get_latest(&1), Some(&2));
+        assert_eq!(map.get_latest(&1), Some((&1, &2)));
         assert_eq!(map.data.len(), 4);
-        assert_eq!(map.pop_latest(&3), Some((1,2)));
+        assert_eq!(map.pop_latest(&3), Some((1, 2)));
         assert_eq!(map.data.len(), 3);
         assert_eq!(map.data_index.len(), 3);
     }
